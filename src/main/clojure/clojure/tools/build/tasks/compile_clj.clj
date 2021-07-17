@@ -25,10 +25,14 @@
 
 (defn- write-compile-script!
   ^File [^File script-file ^File compile-dir nses compiler-opts]
-  (let [script `(binding [~'*compile-path* ~(str compile-dir)
-                          ~'*compiler-options* ~compiler-opts]
-                  ~@(map (fn [n] `(~'compile '~n)) nses)
-                  (System/exit 0))]
+  (let [script `(do
+                  (when-not *compile-files*
+                    (binding [~'*compile-path* ~(str compile-dir)
+                              ~'*compiler-options* ~compiler-opts]
+                      (compile 'your-code)
+                      (System/exit 0)))
+                  (ns your-code
+                    (:require ~@nses)))]
     (spit script-file (with-out-str (pprint/pprint script)))))
 
 (defn- ns->path
@@ -43,7 +47,7 @@
           nses (or ns-compile
                  (mapcat #(find/find-namespaces-in-dir (api/resolve-path %) find/clj) src-dirs))
           working-compile-dir (file/ensure-dir (jio/file working-dir "compile-clj"))
-          compile-script (jio/file working-dir "compile.clj")
+          compile-script (jio/file working-dir "your_code.clj")
           _ (write-compile-script! compile-script working-compile-dir nses compile-opts)
           cp-str (->> (-> classpath keys (conj (.getPath working-compile-dir) (.getPath compile-dir-file)))
                    (map #(api/resolve-path %))
