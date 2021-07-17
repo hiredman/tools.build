@@ -31,7 +31,7 @@
                               ~'*compiler-options* ~compiler-opts]
                       (compile 'your-code)
                       (System/exit 0)))
-                  (ns your-code
+                  (ns ~'your-code
                     (:require ~@nses)))]
     (spit script-file (with-out-str (pprint/pprint script)))))
 
